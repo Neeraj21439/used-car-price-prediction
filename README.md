@@ -11,13 +11,23 @@ A machine learning project that predicts the selling price of used cars in the I
 
 ## Problem Statement
 
-Pricing a used car is hard because many factors affect its value, such as age, kilometers driven, fuel type, engine power and brand. This project builds a regression model that estimates a used car's selling price from these features, which can help buyers and sellers judge whether a price is fair.
+Pricing a used car is hard because many factors affect its value, such as age, kilometers driven, engine power and brand. This project builds a regression model that estimates a used car's selling price from these features, which can help buyers and sellers judge whether a price is fair.
+
+## Results at a Glance
+
+| Model | R² Score | MAE (₹) | RMSE (₹) |
+|---|---|---|---|
+| Linear Regression | 0.69 | 1,33,095 | 2,62,232 |
+| **Random Forest** | **0.92** | **73,118** | **1,29,331** |
+
+- **Best model:** Random Forest Regressor, explaining about 92% of the variance in car prices on unseen test data.
+- **Top features affecting price:** `max_power`, `age` and `km_driven`.
 
 ## Dataset
 
 - **Source:** [Vehicle dataset (CarDekho) on Kaggle](https://www.kaggle.com/datasets/nehalbirla/vehicle-dataset-from-cardekho)
 - **File used:** `Car details v3.csv`
-- **Size:** `XXXX` rows after cleaning (originally `XXXX`)
+- **Size:** 8,128 rows originally, 6,926 rows after removing 1,202 duplicates
 - **Target variable:** `selling_price`
 
 | Column | Description |
@@ -33,6 +43,7 @@ Pricing a used car is hard because many factors affect its value, such as age, k
 | mileage | Fuel efficiency (kmpl) |
 | engine | Engine capacity (CC) |
 | max_power | Maximum power (bhp) |
+| torque | Engine torque (dropped, inconsistent format) |
 | seats | Number of seats |
 
 > The dataset is not included in this repository. Download it from the Kaggle link above and place `Car details v3.csv` in the project folder.
@@ -49,52 +60,38 @@ Pricing a used car is hard because many factors affect its value, such as age, k
 ### 1. Data Cleaning
 - Removed units from `mileage` (kmpl), `engine` (CC) and `max_power` (bhp) and converted them to numeric values.
 - Filled missing values in `mileage`, `engine`, `max_power` and `seats` with the column median.
-- Removed duplicate rows.
+- Removed 1,202 duplicate rows.
 - Dropped the `torque` column because of its inconsistent format.
 
 ### 2. Feature Engineering
-- Created an `age` feature (current year minus manufacturing year) and dropped `year`.
-- Extracted `brand` from the car name.
-- Converted categorical columns (`fuel`, `seller_type`, `transmission`, `owner`, `brand`) into numeric form using one-hot encoding.
+- Created an `age` feature (2026 minus manufacturing year) and dropped `year`.
+- Extracted `brand` from the car name and dropped the `name` column.
+- Converted categorical columns (`brand`, `fuel`, `seller_type`, `transmission`, `owner`) into numeric form using one-hot encoding, giving 47 input features.
 
 ### 3. Exploratory Data Analysis
-Key questions explored with Matplotlib and Seaborn:
-- How is the selling price distributed?
-- How do car age and kilometers driven affect price?
-- How does engine power relate to price?
-- Do fuel type and transmission change the price?
-- Which brands have the highest average price?
+Visualized with Matplotlib and Seaborn: price distribution, correlation heatmap, average price by brand, price vs age, price vs kilometers driven, price vs max power, and price by fuel type and transmission. A boxplot was also used to inspect outliers in `km_driven`.
 
 **Key insights:**
-- `INSIGHT 1` (example: price drops as the car gets older)
-- `INSIGHT 2` (example: higher max power is linked to a higher price)
-- `INSIGHT 3` (example: diesel and automatic cars tend to sell for more)
+- `max_power` has the strongest correlation with price (0.69), followed by `engine` (0.44).
+- Older cars sell for less: `age` is negatively correlated with price (-0.43).
+- Kilometers driven has only a weak negative correlation with price (-0.17).
+- Luxury brands such as Lexus, Volvo, BMW, Jaguar, Land Rover, Audi and Mercedes-Benz have the highest average prices, while brands like Peugeot, Opel, Daewoo and Chevrolet are at the lower end.
 
-### 4. Model Building
-The data was split into 80% training and 20% testing sets (`random_state=42`). The following models were trained and compared:
+### 4. Model Building and Evaluation
+The data was split into 80% training and 20% testing sets (`random_state=42`). Two models were trained and compared using R², MAE and RMSE. Random Forest clearly outperformed Linear Regression (R² of 0.92 vs 0.69), which suggests the relationship between car features and price is non-linear.
 
-- Linear Regression
-- Random Forest Regressor
-- `ADD ANY OTHER MODEL YOU USED`
-
-## Results
-
-| Model | R² Score | MAE | RMSE |
-|---|---|---|---|
-| Linear Regression | `X.XX` | `XXXX` | `XXXX` |
-| Random Forest | `X.XX` | `XXXX` | `XXXX` |
-
-**Best model:** `MODEL NAME`, with an R² of `X.XX` on the test set.
-
-**Top features affecting price:** `FEATURE 1`, `FEATURE 2`, `FEATURE 3`
+Feature importance from the Random Forest model:
+- `max_power` is by far the most important feature (about 0.60).
+- `age` comes second (about 0.23).
+- `km_driven`, `mileage` and `engine` contribute smaller amounts.
 
 ## Visualizations
 
-Add 2-3 screenshots of your best graphs here, for example:
+Add screenshots of your graphs to an `images/` folder and link them here, for example:
 
 ```
-![Price vs Age](images/price_vs_age.png)
 ![Correlation Heatmap](images/heatmap.png)
+![Average Price by Brand](images/brand_price.png)
 ![Feature Importance](images/feature_importance.png)
 ```
 
@@ -119,16 +116,17 @@ Add 2-3 screenshots of your best graphs here, for example:
 
 ```
 used-car-price-prediction/
-├── notebook.ipynb        # Complete analysis and model code
-├── README.md             # Project documentation
-└── images/               # Graphs used in this README
+├── used-car-price-prediction.ipynb   # Complete analysis and model code
+├── README.md                         # Project documentation
+└── images/                           # Graphs used in this README
 ```
 
 ## Limitations and Future Improvements
 
-- Tune hyperparameters with GridSearchCV or RandomizedSearchCV.
+- Results come from a single train-test split; cross-validation would give a more reliable estimate.
+- No hyperparameter tuning has been done yet (GridSearchCV or RandomizedSearchCV can be tried).
+- Extreme values in `km_driven` and `selling_price` were not removed, so very expensive luxury cars may affect errors.
 - Try more models such as Gradient Boosting and XGBoost.
-- Handle outliers in `km_driven` and `selling_price` more carefully.
 - Build a simple web app (for example with Streamlit) to predict prices from user input.
 
 ## Author
